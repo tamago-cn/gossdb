@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func main() {
+func main1() {
 	pool, err := gossdb.NewPool(&conf.Config{
 		Host:             "127.0.0.1",
 		Port:             8888,
