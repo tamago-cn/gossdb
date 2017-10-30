@@ -7,7 +7,7 @@ import (
 )
 
 //扩展值，原始类型为 string
-type Value string
+type Value []byte
 
 //返回 string 的值
 func (v Value) String() string {
@@ -101,7 +101,7 @@ func (v Value) Bytes() []byte {
 
 //判断是否为空
 func (v Value) IsEmpty() bool {
-	return v == ""
+	return v == nil || len(v) == 0
 }
 
 //按json 转换指定类型
@@ -112,6 +112,6 @@ func (v Value) IsEmpty() bool {
 //  var abc time.Time
 //  v.As(&abc)
 func (v Value) As(value interface{}) (err error) {
-	err = json.Unmarshal(v.Bytes(), value)
+	err = json.Unmarshal(v, value)
 	return
 }

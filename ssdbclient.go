@@ -74,7 +74,7 @@ func (s *SSDBClient) Ping() bool {
 }
 
 //执行ssdb命令
-func (s *SSDBClient) do(args ...interface{}) ([]string, error) {
+func (s *SSDBClient) do(args ...interface{}) ([][]byte, error) {
 	if !s.isOpen {
 		return nil, goerr.New("gossdb client is closed.")
 	}
@@ -90,7 +90,7 @@ func (s *SSDBClient) do(args ...interface{}) ([]string, error) {
 }
 
 //通用调用方法，如果有需要在所有方法前执行的，可以在这里执行
-func (s *SSDBClient) Do(args ...interface{}) ([]string, error) {
+func (s *SSDBClient) Do(args ...interface{}) ([][]byte, error) {
 	if s.Password != "" {
 		resp, err := s.do("auth", []string{s.Password})
 		if err != nil {
@@ -98,7 +98,7 @@ func (s *SSDBClient) Do(args ...interface{}) ([]string, error) {
 			s.isOpen = false
 			return nil, goerr.NewError(err, "authentication failed")
 		}
-		if len(resp) > 0 && resp[0] == OK {
+		if len(resp) > 0 && IsOk(resp[0]) {
 			//验证成功
 			s.Password = ""
 		} else {
@@ -247,7 +247,7 @@ func (s *SSDBClient) send(args []interface{}) error {
 }
 
 //接收数据
-func (s *SSDBClient) Recv() (resp []string, err error) {
+func (s *SSDBClient) Recv() (resp [][]byte, err error) {
 	bufSize := 0
 	packetBuf := []byte{}
 	//设置读取数据超时，
@@ -286,7 +286,7 @@ func (s *SSDBClient) Recv() (resp []string, err error) {
 }
 
 //解析数据为string的slice
-func (s *SSDBClient) parse(buf []byte) (resp string, size int) {
+func (s *SSDBClient) parse(buf []byte) (resp []byte, size int) {
 	n := bytes.IndexByte(buf, ENDN)
 	blockSize := -1
 	size = -1
@@ -300,7 +300,7 @@ func (s *SSDBClient) parse(buf []byte) (resp string, size int) {
 		bufSize := len(buf)
 
 		if n+blockSize < bufSize {
-			resp = string(buf[n+1 : blockSize+n+1])
+			resp = buf[n+1 : blockSize+n+1]
 			for i := blockSize + n + 1; i < bufSize; i++ {
 				if buf[i] == ENDN {
 					size = i

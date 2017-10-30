@@ -3,7 +3,6 @@ package gossdb
 import (
 	"github.com/seefan/goerr"
 	"github.com/seefan/gopool"
-	"strconv"
 )
 
 const (
@@ -42,12 +41,12 @@ func (c *Client) DbSize() (re int, err error) {
 	if err != nil {
 		return -1, err
 	}
-	if len(resp) == 2 && resp[0] == OK {
-		return strconv.Atoi(resp[1])
+	if len(resp) == 2 && IsOk(resp[0]) {
+		return ToNum(resp[1]), nil
 	}
 	return -1, makeError(resp)
 }
-func (c *Client) Do(args ...interface{}) ([]string, error) {
+func (c *Client) Do(args ...interface{}) ([][]byte, error) {
 	return c.db.Do(args...)
 }
 
@@ -60,24 +59,43 @@ func (c *Client) Info() (re []string, err error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(resp) > 1 && resp[0] == OK {
-		return resp[1:], nil
+	if len(resp) > 1 && IsOk(resp[0]) {
+		return getResponse(resp[1:]), nil
 	}
 	return nil, makeError(resp)
 }
 
 //生成通过的错误信息，已经确定是有错误
-func makeError(resp []string, errKey ...interface{}) error {
+func makeError(resp [][]byte, errKey ...interface{}) error {
 	if len(resp) < 1 {
 		return goerr.New("ssdb respone error")
 	}
 	//正常返回的不存在不报错，如果要捕捉这个问题请使用exists
-	if resp[0] == NotFound {
+	if IsNotFound(resp[0]) {
 		return nil
 	}
 	if len(errKey) > 0 {
-		return goerr.New("access ssdb error, code is %v, parameter is %v", resp, errKey)
+		return goerr.New("access ssdb error, response is %v, parameter is %v", getResponse(resp), errKey)
 	} else {
-		return goerr.New("access ssdb error, code is %v", resp)
+		return goerr.New("access ssdb error, response is %v", getResponse(resp))
 	}
+}
+
+//判断值是否为ok两个字符
+func IsOk(v []byte) bool {
+	return len(v) == 2 && v[0] == 'o' && v[1] == 'k'
+}
+func Is1(v []byte) bool {
+	return len(v) == 1 && v[0] == '1'
+}
+
+//判断值是否为not_found
+func IsNotFound(v []byte) bool {
+	return len(v) == 9 && v[0] == 'n' && v[1] == 'o' && v[2] == 't' && v[3] == '_' && v[4] == 'f' && v[5] == 'o' && v[6] == 'u' && v[7] == 'n' && v[8] == 'd'
+}
+func getResponse(vs [][]byte) (resp []string) {
+	for _, v := range vs {
+		resp = append(resp, string(v))
+	}
+	return
 }

@@ -22,7 +22,7 @@ func (c *Client) Qsize(name string) (size int64, err error) {
 		return -1, goerr.NewError(err, "Qsize %s error", name)
 	}
 
-	if len(resp) == 2 && resp[0] == OK {
+	if len(resp) == 2 && IsOk(resp[0]) {
 		return Value(resp[1]).Int64(), nil
 	}
 	return -1, makeError(resp, name)
@@ -38,7 +38,7 @@ func (c *Client) Qclear(name string) (err error) {
 		return goerr.NewError(err, "Qclear %s error", name)
 	}
 
-	if len(resp) > 0 && resp[0] == OK {
+	if len(resp) > 0 && IsOk(resp[0]) {
 		return nil
 	}
 	return makeError(resp, name)
@@ -77,7 +77,7 @@ func (c *Client) qpush(name string, reverse bool, value ...interface{}) (size in
 	if err != nil {
 		return -1, goerr.NewError(err, "%s %s error", qpush_cmd[index], name)
 	}
-	if len(resp) == 2 && resp[0] == OK {
+	if len(resp) == 2 && IsOk(resp[0]) {
 		return Value(resp[1]).Int64(), nil
 	}
 	return -1, makeError(resp, name)
@@ -133,12 +133,12 @@ func (c *Client) Qpop(name string, reverse ...bool) (v Value, err error) {
 	}
 	resp, err := c.Do(qpop_cmd[index], name)
 	if err != nil {
-		return "", goerr.NewError(err, "%s %s error", qpop_cmd[index], name)
+		return nil, goerr.NewError(err, "%s %s error", qpop_cmd[index], name)
 	}
-	if len(resp) == 2 && resp[0] == OK {
+	if len(resp) == 2 && IsOk(resp[0]) {
 		return Value(resp[1]), nil
 	}
-	return "", makeError(resp, name)
+	return nil, makeError(resp, name)
 }
 
 //从队列首部弹出最后多个元素.
@@ -177,7 +177,7 @@ func (c *Client) QpopArray(name string, size int64, reverse ...bool) (v []Value,
 	}
 
 	respsize := len(resp)
-	if respsize > 0 && resp[0] == OK {
+	if respsize > 0 && IsOk(resp[0]) {
 		for i := 1; i < respsize; i++ {
 			v = append(v, Value(resp[i]))
 		}
@@ -235,7 +235,7 @@ func (c *Client) slice(name string, args ...int) (v []Value, err error) {
 		return nil, goerr.NewError(err, "%s %s error", qslice_cmd[index], name)
 	}
 	size := len(resp)
-	if size >= 1 && resp[0] == OK {
+	if size >= 1 && IsOk(resp[0]) {
 		for i := 1; i < size; i++ {
 			v = append(v, Value(resp[i]))
 		}
@@ -260,7 +260,7 @@ func (c *Client) Qtrim(name string, size int, reverse ...bool) (delSize int64, e
 	if err != nil {
 		return -1, goerr.NewError(err, "%s %s error", qtrim_cmd[index], name)
 	}
-	if len(resp) == 2 && resp[0] == OK {
+	if len(resp) == 2 && IsOk(resp[0]) {
 		return Value(resp[1]).Int64(), nil
 	}
 	return -1, makeError(resp, name)
@@ -299,12 +299,12 @@ func (c *Client) Qlist(nameStart, nameEnd string, limit int64) ([]string, error)
 		return nil, goerr.NewError(err, "Qlist %s %s %v error", nameStart, nameEnd, limit)
 	}
 
-	if len(resp) > 0 && resp[0] == OK {
+	if len(resp) > 0 && IsOk(resp[0]) {
 		size := len(resp)
 		keyList := make([]string, 0, size-1)
 
 		for i := 1; i < size; i += 1 {
-			keyList = append(keyList, resp[i])
+			keyList = append(keyList, string(resp[i]))
 		}
 		return keyList, nil
 	}
@@ -324,12 +324,12 @@ func (c *Client) Qrlist(nameStart, nameEnd string, limit int64) ([]string, error
 		return nil, goerr.NewError(err, "Qrlist %s %s %v error", nameStart, nameEnd, limit)
 	}
 
-	if len(resp) > 0 && resp[0] == OK {
+	if len(resp) > 0 && IsOk(resp[0]) {
 		size := len(resp)
 		keyList := make([]string, 0, size-1)
 
 		for i := 1; i < size; i += 1 {
-			keyList = append(keyList, resp[i])
+			keyList = append(keyList, string(resp[i]))
 		}
 		return keyList, nil
 	}
@@ -343,14 +343,13 @@ func (c *Client) Qrlist(nameStart, nameEnd string, limit int64) ([]string, error
 //  val  传入的值.
 //  返回 err，执行的错误，操作成功返回 nil
 func (c *Client) Qset(key string, index int64, val interface{}) (err error) {
-	var resp []string
 
-	resp, err = c.Do("qset", key, index, val)
+	resp, err := c.Do("qset", key, index, val)
 
 	if err != nil {
 		return goerr.NewError(err, "Qset %s error", key)
 	}
-	if len(resp) > 0 && resp[0] == OK {
+	if len(resp) > 0 && IsOk(resp[0]) {
 		return nil
 	}
 	return makeError(resp, key)
@@ -365,12 +364,12 @@ func (c *Client) Qset(key string, index int64, val interface{}) (err error) {
 func (c *Client) Qget(key string, index int64) (Value, error) {
 	resp, err := c.Do("qget", key, index)
 	if err != nil {
-		return "", goerr.NewError(err, "Qget %s error", key)
+		return nil, goerr.NewError(err, "Qget %s error", key)
 	}
-	if len(resp) == 2 && resp[0] == OK {
+	if len(resp) == 2 && IsOk(resp[0]) {
 		return Value(resp[1]), nil
 	}
-	return "", makeError(resp, key)
+	return nil, makeError(resp, key)
 }
 
 //返回队列的第一个元素.
@@ -381,12 +380,12 @@ func (c *Client) Qget(key string, index int64) (Value, error) {
 func (c *Client) Qfront(key string) (Value, error) {
 	resp, err := c.Do("qfront", key)
 	if err != nil {
-		return "", goerr.NewError(err, "Qfront %s error", key)
+		return nil, goerr.NewError(err, "Qfront %s error", key)
 	}
-	if len(resp) == 2 && resp[0] == OK {
+	if len(resp) == 2 && IsOk(resp[0]) {
 		return Value(resp[1]), nil
 	}
-	return "", makeError(resp, key)
+	return nil, makeError(resp, key)
 }
 
 //返回队列的最后一个元素.
@@ -397,12 +396,12 @@ func (c *Client) Qfront(key string) (Value, error) {
 func (c *Client) Qback(key string) (Value, error) {
 	resp, err := c.Do("qback", key)
 	if err != nil {
-		return "", goerr.NewError(err, "Qback %s error", key)
+		return nil, goerr.NewError(err, "Qback %s error", key)
 	}
-	if len(resp) == 2 && resp[0] == OK {
+	if len(resp) == 2 && IsOk(resp[0]) {
 		return Value(resp[1]), nil
 	}
-	return "", makeError(resp, key)
+	return nil, makeError(resp, key)
 }
 
 //往队列的首部添加一个或者多个元素
@@ -426,7 +425,7 @@ func (c *Client) qpush_array(name string, reverse bool, value []interface{}) (si
 	if err != nil {
 		return -1, goerr.NewError(err, "%s %s error", qpush_cmd[index], name)
 	}
-	if len(resp) == 2 && resp[0] == OK {
+	if len(resp) == 2 && IsOk(resp[0]) {
 		return Value(resp[1]).Int64(), nil
 	}
 	return -1, makeError(resp, name)

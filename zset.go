@@ -17,7 +17,7 @@ func (c *Client) Zset(setName, key string, score int64) (err error) {
 		return goerr.NewError(err, "Zset %s/%s error", setName, key)
 	}
 
-	if len(resp) > 0 && resp[0] == OK {
+	if len(resp) > 0 && IsOk(resp[0]) {
 		return nil
 	}
 	return makeError(resp, setName, key)
@@ -34,7 +34,7 @@ func (c *Client) Zget(setName, key string) (score int64, err error) {
 	if err != nil {
 		return 0, goerr.NewError(err, "Zget %s/%s error", setName, key)
 	}
-	if len(resp) == 2 && resp[0] == OK {
+	if len(resp) == 2 && IsOk(resp[0]) {
 		return Value(resp[1]).Int64(), nil
 	}
 	return 0, makeError(resp, setName, key)
@@ -50,7 +50,7 @@ func (c *Client) Zdel(setName, key string) (err error) {
 	if err != nil {
 		return goerr.NewError(err, "Zdel %s/%s error", setName, key)
 	}
-	if len(resp) > 0 && resp[0] == OK {
+	if len(resp) > 0 && IsOk(resp[0]) {
 		return nil
 	}
 	return makeError(resp, setName, key)
@@ -68,8 +68,8 @@ func (c *Client) Zexists(setName, key string) (re bool, err error) {
 		return false, goerr.NewError(err, "Zexists %s/%s error", setName, key)
 	}
 
-	if len(resp) == 2 && resp[0] == OK {
-		return resp[1] == "1", nil
+	if len(resp) == 2 && IsOk(resp[0]) {
+		return Is1(resp[1]), nil
 	}
 	return false, makeError(resp, setName, key)
 }
@@ -87,7 +87,7 @@ func (c *Client) Zcount(setName string, start, end interface{}) (count int64, er
 		return -1, goerr.NewError(err, "Zcount %s %v %v error", setName, start, end)
 	}
 
-	if len(resp) == 2 && resp[0] == OK {
+	if len(resp) == 2 && IsOk(resp[0]) {
 		return Value(resp[1]).Int64(), nil
 	}
 	return -1, makeError(resp, setName)
@@ -103,7 +103,7 @@ func (c *Client) Zclear(setName string) (err error) {
 		return goerr.NewError(err, "Zclear %s error", setName)
 	}
 
-	if len(resp) > 0 && resp[0] == OK {
+	if len(resp) > 0 && IsOk(resp[0]) {
 		return nil
 	}
 	return makeError(resp, setName)
@@ -128,13 +128,13 @@ func (c *Client) Zscan(setName string, keyStart string, scoreStart, scoreEnd int
 	if err != nil {
 		return nil, nil, goerr.NewError(err, "Zscan %s %v %v %v %v error", setName, keyStart, scoreStart, scoreEnd, limit)
 	}
-	if len(resp) > 0 && resp[0] == OK {
+	if len(resp) > 0 && IsOk(resp[0]) {
 		size := len(resp)
 		keys := make([]string, 0, (size-1)/2)
 		scores := make([]int64, 0, (size-1)/2)
 
 		for i := 1; i < size-1; i += 2 {
-			keys = append(keys, resp[i])
+			keys = append(keys, string(resp[i]))
 			scores = append(scores, Value(resp[i+1]).Int64())
 		}
 		return keys, scores, nil
@@ -159,13 +159,13 @@ func (c *Client) Zrscan(setName string, keyStart string, scoreStart, scoreEnd in
 		return nil, nil, goerr.NewError(err, "Zrscan %s %v %v %v %v error", setName, keyStart, scoreStart, scoreEnd, limit)
 	}
 
-	if len(resp) > 0 && resp[0] == OK {
+	if len(resp) > 0 && IsOk(resp[0]) {
 		size := len(resp)
 		keys := make([]string, 0, (size-1)/2)
 		scores := make([]int64, 0, (size-1)/2)
 
 		for i := 1; i < size-1; i += 2 {
-			keys = append(keys, resp[i])
+			keys = append(keys, string(resp[i]))
 			scores = append(scores, Value(resp[i+1]).Int64())
 		}
 		return keys, scores, nil
@@ -191,7 +191,7 @@ func (c *Client) MultiZset(setName string, kvs map[string]int64) (err error) {
 		return goerr.NewError(err, "MultiZset %s %s error", setName, kvs)
 	}
 
-	if len(resp) > 0 && resp[0] == OK {
+	if len(resp) > 0 && IsOk(resp[0]) {
 		return nil
 	}
 	return makeError(resp, setName, kvs)
@@ -219,10 +219,10 @@ func (c *Client) MultiZget(setName string, key ...string) (val map[string]int64,
 		return nil, goerr.NewError(err, "MultiZget %s %s error", setName, key)
 	}
 	size := len(resp)
-	if size > 0 && resp[0] == OK {
+	if size > 0 && IsOk(resp[0]) {
 		val = make(map[string]int64)
 		for i := 1; i < size && i+1 < size; i += 2 {
-			val[resp[i]] = Value(resp[i+1]).Int64()
+			val[string(resp[i])] = Value(resp[i+1]).Int64()
 		}
 		return val, nil
 	}
@@ -251,13 +251,13 @@ func (c *Client) MultiZgetSlice(setName string, key ...string) (keys []string, s
 	}
 
 	size := len(resp)
-	if size > 0 && resp[0] == OK {
+	if size > 0 && IsOk(resp[0]) {
 
 		keys := make([]string, (size-1)/2)
 		scores := make([]int64, (size-1)/2)
 
 		for i := 1; i < size && i+1 < size; i += 2 {
-			keys = append(keys, resp[i])
+			keys = append(keys, string(resp[i]))
 			scores = append(scores, Value(resp[i+1]).Int64())
 		}
 		return keys, scores, nil
@@ -304,7 +304,7 @@ func (c *Client) MultiZdel(setName string, key ...string) (err error) {
 		return goerr.NewError(err, "MultiZdel %s %s error", setName, key)
 	}
 
-	if len(resp) > 0 && resp[0] == OK {
+	if len(resp) > 0 && IsOk(resp[0]) {
 		return nil
 	}
 	return makeError(resp, setName, key)
@@ -326,7 +326,7 @@ func (c *Client) Zincr(setName string, key string, num int64) (int64, error) {
 		return 0, goerr.NewError(err, "Zincr %s %s %v", setName, key, num)
 	}
 
-	if len(resp) > 1 && resp[0] == OK {
+	if len(resp) > 1 && IsOk(resp[0]) {
 		return to.Int64(resp[1]), nil
 	}
 	return 0, makeError(resp, setName, key)
@@ -345,12 +345,12 @@ func (c *Client) Zlist(nameStart, nameEnd string, limit int64) ([]string, error)
 		return nil, goerr.NewError(err, "Zlist %s %s %v error", nameStart, nameEnd, limit)
 	}
 
-	if len(resp) > 0 && resp[0] == OK {
+	if len(resp) > 0 && IsOk(resp[0]) {
 		size := len(resp)
 		keyList := make([]string, 0, size-1)
 
 		for i := 1; i < size; i += 1 {
-			keyList = append(keyList, resp[i])
+			keyList = append(keyList, string(resp[i]))
 		}
 		return keyList, nil
 	}
@@ -368,7 +368,7 @@ func (c *Client) Zsize(name string) (val int64, err error) {
 		return 0, goerr.NewError(err, "Zsize %s  error", name)
 	}
 
-	if len(resp) > 0 && resp[0] == OK {
+	if len(resp) > 0 && IsOk(resp[0]) {
 		val = to.Int64(resp[1])
 		return val, nil
 	}
@@ -391,12 +391,12 @@ func (c *Client) Zkeys(setName string, keyStart string, scoreStart, scoreEnd int
 	if err != nil {
 		return nil, goerr.NewError(err, "Zkeys %s %v %v %v %v error", setName, keyStart, scoreStart, scoreEnd, limit)
 	}
-	if len(resp) > 0 && resp[0] == OK {
+	if len(resp) > 0 && IsOk(resp[0]) {
 		size := len(resp)
 		keys := []string{}
 
 		for i := 1; i < size; i++ {
-			keys = append(keys, resp[i])
+			keys = append(keys, string(resp[i]))
 		}
 		return keys, nil
 	}
@@ -416,7 +416,7 @@ func (c *Client) Zsum(setName string, scoreStart, scoreEnd interface{}) (val int
 	if err != nil {
 		return 0, goerr.NewError(err, "Zsum %s %v %v  error", setName, scoreStart, scoreEnd)
 	}
-	if len(resp) > 0 && resp[0] == OK {
+	if len(resp) > 0 && IsOk(resp[0]) {
 		val = to.Int64(resp[1])
 		return val, nil
 	}
@@ -436,7 +436,7 @@ func (c *Client) Zavg(setName string, scoreStart, scoreEnd interface{}) (val int
 	if err != nil {
 		return 0, goerr.NewError(err, "Zavg %s %v %v  error", setName, scoreStart, scoreEnd)
 	}
-	if len(resp) > 0 && resp[0] == OK {
+	if len(resp) > 0 && IsOk(resp[0]) {
 		val = to.Int64(resp[1])
 		return val, nil
 	}
@@ -455,7 +455,7 @@ func (c *Client) Zrank(setName, key string) (val int64, err error) {
 	if err != nil {
 		return 0, goerr.NewError(err, "Zrank %s %s  error", setName, key)
 	}
-	if len(resp) > 0 && resp[0] == OK {
+	if len(resp) > 0 && IsOk(resp[0]) {
 		val = to.Int64(resp[1])
 		return val, nil
 	}
@@ -474,7 +474,7 @@ func (c *Client) Zrrank(setName, key string) (val int64, err error) {
 	if err != nil {
 		return 0, goerr.NewError(err, "Zrrank %s %s  error", setName, key)
 	}
-	if len(resp) > 0 && resp[0] == OK {
+	if len(resp) > 0 && IsOk(resp[0]) {
 		val = to.Int64(resp[1])
 		return val, nil
 	}
@@ -494,11 +494,11 @@ func (c *Client) Zrange(setName string, offset, limit int64) (val map[string]int
 	if err != nil {
 		return nil, goerr.NewError(err, "Zrange %s %s  error", setName, offset, limit)
 	}
-	if len(resp) > 0 && resp[0] == OK {
+	if len(resp) > 0 && IsOk(resp[0]) {
 		val = make(map[string]int64)
 		size := len(resp)
 		for i := 1; i < size-1; i += 2 {
-			val[resp[i]] = Value(resp[i+1]).Int64()
+			val[string(resp[i])] = Value(resp[i+1]).Int64()
 		}
 		return val, nil
 	}
@@ -518,12 +518,12 @@ func (c *Client) Zrange_slice(setName string, offset, limit int64) (key []string
 	if err != nil {
 		return nil, nil, goerr.NewError(err, "Zrange_slice %s %s  error", setName, offset, limit)
 	}
-	if len(resp) > 0 && resp[0] == OK {
+	if len(resp) > 0 && IsOk(resp[0]) {
 		val = []int64{}
 		key = []string{}
 		size := len(resp)
 		for i := 1; i < size-1; i += 2 {
-			key = append(key, resp[i])
+			key = append(key, string(resp[i]))
 			val = append(val, Value(resp[i+1]).Int64())
 		}
 		return key, val, nil
@@ -544,12 +544,12 @@ func (c *Client) Zrrange(setName string, offset, limit int64) (val map[string]in
 	if err != nil {
 		return nil, goerr.NewError(err, "Zrrange %s %s  error", setName, offset, limit)
 	}
-	if len(resp) > 0 && resp[0] == OK {
+	if len(resp) > 0 && IsOk(resp[0]) {
 		val = make(map[string]int64)
 		size := len(resp)
 
 		for i := 1; i < size-1; i += 2 {
-			val[resp[i]] = Value(resp[i+1]).Int64()
+			val[string(resp[i])] = Value(resp[i+1]).Int64()
 		}
 		return val, nil
 	}
@@ -569,13 +569,13 @@ func (c *Client) Zrrange_slice(setName string, offset, limit int64) (key []strin
 	if err != nil {
 		return nil, nil, goerr.NewError(err, "Zrrange_slice %s %s  error", setName, offset, limit)
 	}
-	if len(resp) > 0 && resp[0] == OK {
+	if len(resp) > 0 && IsOk(resp[0]) {
 		val = []int64{}
 		key = []string{}
 		size := len(resp)
 
 		for i := 1; i < size-1; i += 2 {
-			key = append(key, resp[i])
+			key = append(key, string(resp[i]))
 			val = append(val, Value(resp[i+1]).Int64())
 		}
 		return key, val, nil
@@ -595,7 +595,7 @@ func (c *Client) Zremrangebyrank(setName string, start, end int64) (err error) {
 	if err != nil {
 		return goerr.NewError(err, "Zremrangebyrank %s %s  error", setName, start, end)
 	}
-	if len(resp) > 0 && resp[0] == OK {
+	if len(resp) > 0 && IsOk(resp[0]) {
 		return nil
 	}
 	return makeError(resp, setName, start, end)
@@ -613,7 +613,7 @@ func (c *Client) Zremrangebyscore(setName string, start, end int64) (err error) 
 	if err != nil {
 		return goerr.NewError(err, "Zremrangebyscore %s %s  error", setName, start, end)
 	}
-	if len(resp) > 0 && resp[0] == OK {
+	if len(resp) > 0 && IsOk(resp[0]) {
 		return nil
 	}
 	return makeError(resp, setName, start, end)
@@ -632,10 +632,10 @@ func (c *Client) Zpopfront(setName string, limit int64) (val map[string]int64, e
 		return nil, goerr.NewError(err, "Zpopfront %s %s  error", setName, limit)
 	}
 	size := len(resp)
-	if size > 0 && resp[0] == OK {
+	if size > 0 && IsOk(resp[0]) {
 		val = make(map[string]int64)
 		for i := 1; i < size && i+1 < size; i += 2 {
-			val[resp[i]] = Value(resp[i+1]).Int64()
+			val[string(resp[i])] = Value(resp[i+1]).Int64()
 		}
 		return val, nil
 	}
@@ -655,10 +655,10 @@ func (c *Client) Zpopback(setName string, limit int64) (val map[string]int64, er
 		return nil, goerr.NewError(err, "Zpopback %s %s  error", setName, limit)
 	}
 	size := len(resp)
-	if size > 0 && resp[0] == OK {
+	if size > 0 && IsOk(resp[0]) {
 		val = make(map[string]int64)
 		for i := 1; i < size && i+1 < size; i += 2 {
-			val[resp[i]] = Value(resp[i+1]).Int64()
+			val[string(resp[i])] = Value(resp[i+1]).Int64()
 		}
 		return val, nil
 	}
