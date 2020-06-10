@@ -1,7 +1,7 @@
 package gossdb
 
 import (
-	"github.com/tamago-cn/goerr"
+	"github.com/tamago-cn/gossdb/goerr"
 )
 
 var (

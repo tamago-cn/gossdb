@@ -8,7 +8,7 @@ import (
 	"net"
 	"strconv"
 
-	"github.com/tamago-cn/goerr"
+	"github.com/tamago-cn/gossdb/goerr"
 )
 
 type SSDBClient struct {

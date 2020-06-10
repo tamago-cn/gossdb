@@ -1,7 +1,7 @@
 package gossdb
 
 import (
-	"github.com/tamago-cn/gopool"
+	"github.com/tamago-cn/gossdb/gopool"
 	"github.com/tamago-cn/gossdb/conf"
 )
 

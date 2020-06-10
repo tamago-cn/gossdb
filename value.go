@@ -2,7 +2,7 @@ package gossdb
 
 import (
 	"encoding/json"
-	"github.com/tamago-cn/to"
+	"github.com/tamago-cn/gossdb/to"
 	"time"
 )
 
