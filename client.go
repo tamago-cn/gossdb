@@ -1,8 +1,8 @@
 package gossdb
 
 import (
-	"github.com/seefan/goerr"
-	"github.com/seefan/gopool"
+	"github.com/tamago-cn/goerr"
+	"github.com/tamago-cn/gopool"
 	"strconv"
 )
 

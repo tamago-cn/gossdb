@@ -1,7 +1,7 @@
 package gossdb
 
 import (
-	"github.com/seefan/goerr"
+	"github.com/tamago-cn/goerr"
 )
 
 var (

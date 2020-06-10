@@ -1,8 +1,8 @@
 package gossdb
 
 import (
-	"github.com/seefan/gopool"
-	"github.com/seefan/gossdb/conf"
+	"github.com/tamago-cn/gopool"
+	"github.com/tamago-cn/gossdb/conf"
 )
 
 //连接池

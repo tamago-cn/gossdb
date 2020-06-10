@@ -42,7 +42,7 @@
     #获取连接超时时间，单位为秒。默认值: 5
     get_client_timeout=5
 
-更多说明请见[这里](https://gowalker.org/github.com/seefan/gossdb)
+更多说明请见[这里](https://gowalker.org/github.com/tamago-cn/gossdb)
 
 所有的API基本上忠于ssdb的原始API用法，只针对go的特点增加部分方法。所以也可以参照官方文档使用。
 

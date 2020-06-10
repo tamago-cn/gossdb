@@ -1,6 +1,6 @@
 package gossdb
 
-import "github.com/seefan/goerr"
+import "github.com/tamago-cn/goerr"
 
 //设置 hashmap 中指定 key 对应的值内容.
 //

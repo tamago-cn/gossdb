@@ -1,8 +1,8 @@
 package gossdb
 
 import (
-	"github.com/seefan/goerr"
-	"github.com/seefan/to"
+	"github.com/tamago-cn/goerr"
+	"github.com/tamago-cn/to"
 )
 
 //设置 zset 中指定 key 对应的权重值.
