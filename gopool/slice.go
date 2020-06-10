@@ -2,7 +2,7 @@ package gopool
 
 import (
 	"sync"
-	"github.com/seefan/goerr"
+	"github.com/tamago-cn/gossdb/goerr"
 	"fmt"
 )
 

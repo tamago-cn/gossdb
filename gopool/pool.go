@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/seefan/goerr"
+	"github.com/tamago-cn/gossdb/goerr"
 )
 
 const (

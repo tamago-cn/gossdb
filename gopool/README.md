@@ -12,7 +12,7 @@
 
     goos: darwin
     goarch: amd64
-    pkg: github.com/seefan/gopool
+    pkg: github.com/tamago-cn/gossdb/gopool
     5000000	       262 ns/op
     5000000	       265 ns/op
     5000000	       267 ns/op
